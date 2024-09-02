@@ -43,12 +43,17 @@ class MainActivity : ComponentActivity() {
                         //
                         NavHost(navController = navController, startDestination = "Home") {
                             composable("Home") {
-                                HomeScreen { movieDetails ->
+                                HomeScreen(
+                                    viewModel = viewModel
+                                ) { movieDetails ->
                                     // navigate to details screen
+                                    viewModel.onMovieSelected(movieDetails)
+                                    navController.navigate("Details")
                                 }
                             }
+
                             composable("Details") {
-                                DetailScreen()
+                                DetailScreen(viewModel = viewModel)
                             }
                         }
                     }

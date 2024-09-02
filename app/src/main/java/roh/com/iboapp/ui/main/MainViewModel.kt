@@ -7,9 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import roh.com.iboapp.di.module.NetworkModule
 import roh.com.iboapp.domain.model.MovieDetails
+import roh.com.iboapp.domain.repository.MovieRepository
+import roh.com.iboapp.ui.home.HomeUiState
 import javax.inject.Inject
 
 private const val TAG = "MAIN_VM"
@@ -18,33 +23,39 @@ private const val TAG = "MAIN_VM"
 class MainViewModel
 @Inject
 constructor(
-
+    private val movieRepository: MovieRepository
 ) : ViewModel() {
 
-    val movies: MutableState<List<MovieDetails>> = mutableStateOf(emptyList())
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private val _movieDetails = MutableStateFlow<MovieDetails?>(null)
+    val movieDetails: StateFlow<MovieDetails?> = _movieDetails
 
     init {
         fetchListOfMoviesFromServer()
     }
 
-    // state for list observer
-
     // fun to fetch list and update in state
     fun fetchListOfMoviesFromServer() {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val apiService = NetworkModule.api
-                val movieList = apiService.getMovies("1700718031139")
-                Log.d(TAG, "fetchListOfMoviesFromServer: $movieList")
+            _uiState.value = HomeUiState.Loading
 
-                if (movieList.isNotEmpty()) {
-                    movies.value = movieList
-                }
+            try {
+                val listOfMovies = movieRepository.getMovieDetails()
+                Log.d(TAG, "ListOfMoviesFromServer: $listOfMovies ")
+                _uiState.value = HomeUiState.Success(listOfMovies)
             } catch (e: Exception) {
-                Log.e(TAG, "fetchListOfMoviesFromServer: exception", e)
+                _uiState.value = HomeUiState.Error
+                Log.e(TAG, "fetchListOfMoviesFromServer: ", e)
             }
 
+        }
+    }
+
+    fun onMovieSelected(movieDetails: MovieDetails) {
+        viewModelScope.launch {
+            _movieDetails.value = movieDetails
         }
     }
 

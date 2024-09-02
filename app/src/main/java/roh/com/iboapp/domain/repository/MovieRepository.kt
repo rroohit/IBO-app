@@ -1,7 +1,8 @@
 package roh.com.iboapp.domain.repository
 
+import roh.com.iboapp.domain.model.MovieDetails
+
 interface MovieRepository {
 
-    // get list of movies from server
-    suspend fun getMovies()
+    suspend fun getMovieDetails(): List<MovieDetails>
 }
